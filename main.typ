@@ -83,17 +83,19 @@
 //////////////////END OF USER AREA////////////////////
 
 
-
+//helper functions
 
 //prioritise values from the command line
-#let cmd-line-override = (key, val) => {
+#let cmd-line-override = (key, val, fn: x => x) => {
   let cmd-line-val = sys.inputs.at(key, default: none)
   if cmd-line-val != none {
-    cmd-line-val
+    fn(cmd-line-val)
   } else {
     val
   }
 }
+
+//wrap a lone value in a list
 #let listify = x => {
   if type(x) != array {
     (x,)
@@ -102,11 +104,26 @@
   }
 }
 
+//parse what might be a list or a lone string
+#let parse-list-or-str = x => {
+  if x.starts-with("(") {
+    eval(x.replace("(", "(\"").replace(",", "\",\"").replace(")", "\")"))
+  } else {
+    x
+  }
+}
+
+//lmao this is the only way to parse a string into a date
+#let parse-date = x => {
+  toml(bytes("date = " + x)).date
+}
+
 //oh god the copypaste
-#let to-generate = listify(cmd-line-override("to-generate", to-generate))
-#let current-week = cmd-line-override("current-week", current-week)
-#let current-date = cmd-line-override("current-date", current-date)
-#let showcase-date = cmd-line-override("showcase-date", showcase-date)
+//the strings specify the names you need to pass on the command line, but they're just the same as the variable names
+#let to-generate = listify(cmd-line-override("to-generate", to-generate, fn: parse-list-or-str))
+#let current-week = cmd-line-override("current-week", current-week, fn: eval)
+#let current-date = cmd-line-override("current-date", current-date, fn: parse-date)
+#let showcase-date = cmd-line-override("showcase-date", showcase-date, fn: parse-date)
 
 #let announcement-glyph = cmd-line-override("announcement-glyph", announcement-glyph)
 #let glyph-winner-first = cmd-line-override("glyph-winner-first", glyph-winner-first)
